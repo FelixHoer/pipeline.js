@@ -1,0 +1,86 @@
+<html>
+<head>
+
+	<title>Pipeline-Demo</title>
+	<script language="javascript" type="text/javascript" src="../pipeline.js"></script>
+
+</head>
+<body>
+
+	<h1>Context-Demo</h1>
+
+	<script language="javascript" type="text/javascript">
+		(function(){
+
+			// display messages
+			var log = function(text){
+				var body = document.body;
+				body.appendChild(document.createTextNode(text));
+				body.appendChild(document.createElement('br'));
+				console && console.log && console.log(text);
+			};
+
+			// load functions into scope
+			var sequence = pipeline.sequence;
+
+			// create a pipeline
+			var pipe = sequence([
+			                     
+ 				function(next){
+					var context = this;
+					log('starting with: ' + context.value);
+					next();
+				},
+			                     
+ 				function(next){
+					var context = this;
+					log('appending js...');
+					setTimeout(function(){
+						context.value = context.value + '.js';
+						log('done!');
+						next();
+					}, 500);
+				},
+				
+				function(next){
+					var context = this;
+					log('prepending pipe...');
+					setTimeout(function(){
+						context.value = 'pipe' + context.value;
+						log('done!');
+						next();
+					}, 500);
+				},
+				
+				function(next){
+					var context = this;
+					log('making it big...');
+					setTimeout(function(){
+						context.value = context.value.toUpperCase();
+						log('done!');
+						next();
+					}, 500);
+				}
+				
+			]);
+			
+			// create context and onComplete
+			
+			var context = {
+				value: 'line'	
+			};
+			
+			var onComplete = function(){
+				log('all jobs have finished');
+				var context = this;
+				log('value is: ' + context.value);
+			};
+
+			// execute the pipeline and call the given function when finished
+			pipe(onComplete, context);
+
+		})();
+	</script>
+
+</body>
+</html>
