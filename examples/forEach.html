@@ -22,7 +22,7 @@
 
 			// generator for asynchronous testing functions
 			var processAsync = function(item, next){
-			var time = parseInt(Math.random() * 1000);
+				var time = parseInt(Math.random() * 1000);
 				log(item + ': start processing');
 				setTimeout(function(){
 					log(item + ': done processing after ' + time + 'ms');

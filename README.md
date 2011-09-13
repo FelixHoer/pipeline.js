@@ -64,22 +64,122 @@ var generateAsyncFunction = function(name, time){
 
 # api
 
-## building
+## pipeline.sequence( functions, callback, [context] )
+## pipeline.sequence( functions ) -> f( callback, [context] )
 
-### pipeline.sequence( functions, callback, context )
-### pipeline.sequence( functions ) -> f( callback, context )
+```
+functions: [ function(next) ]
+	next: function()
+callback: function()
+context: {}
+```
 
-TODO
+`sequence` calls the given `functions` one after another. 
+Once all are done the `callback` is executed.
+If a `context` is provided all `functions` and the `callback` will be executed 
+with `this` assigned to it.
 
-### pipeline.parallel( functions, callback, context )
-### pipeline.parallel( functions ) -> f( callback, context )
+ie `examples/sequence.html`:
 
-TODO
+```javascript
+// load functions into scope
+var sequence = pipeline.sequence;
 
-### pipeline.forEach( collection, iterator, callback, context )
-### pipeline.forEach( functions, iterator ) -> f( callback, context )
+// create a pipeline
+var pipe = sequence([
+	generateAsyncFunction('a', 700),
+	generateAsyncFunction('b', 500),
+	generateAsyncFunction('c', 800)
+]);
 
-TODO
+// execute the pipeline and call the given function when finished
+pipe(function(){
+	log('all jobs have finished');
+});
+```
+
+## pipeline.parallel( functions, callback, [context] )
+## pipeline.parallel( functions ) -> f( callback, [context] )
+
+```
+functions: [ function(next) ]
+	next: function()
+callback: function()
+context: {}
+```
+
+`parallel` starts the given `functions` all at the same time and doesn't wait 
+for the predecessor's callback.
+Once all `functions` are done the `callback` is executed.
+If a `context` is provided all `functions` and the `callback` will be executed 
+with `this` assigned to it.
+
+ie `examples/parallel.html`:
+
+```javascript
+// load functions into scope
+var parallel = pipeline.parallel;
+
+// create a pipeline
+var pipe = parallel([
+	generateAsyncFunction('a', 700),
+	generateAsyncFunction('b', 500),
+	generateAsyncFunction('c', 800)
+]);
+
+// execute the pipeline and call the given function when finished
+pipe(function(){
+	log('all jobs have finished');
+});
+```
+
+## pipeline.forEach( collection, iterator, callback, context )
+## pipeline.forEach( functions, iterator ) -> f( callback, context )
+
+```
+collection: [ any ]
+iterator: function(item, next)
+	item: any
+	next: function()
+callback: function()
+context: {}
+```
+
+`forEach` calls `iterator` with each `item` in the collection.
+Once the `next`-function of all `iterator`s / `item`s has been called the 
+`callback` is executed.
+If a `context` is provided each `iterator` and the `callback` will be executed 
+with `this` assigned to it.
+
+ie `examples/forEach.html`:
+
+```javascript
+// simulate long running processing
+var processAsync = function(item, next){
+	var time = parseInt(Math.random() * 1000);
+	log(item + ': start processing');
+	setTimeout(function(){
+		log(item + ': done processing after ' + time + 'ms');
+		next(); // signal that async function is done
+	}, time);
+};
+
+// load functions into scope
+var forEach = pipeline.forEach;
+
+// a collection of items that have to be processed in parallel
+var collection = ['a', 'b', 'c', 'd'];
+
+// create a pipeline
+var pipe = forEach(collection, function(item, done){
+	processAsync(item, done);
+});
+
+// execute the pipeline and call the given function when finished
+pipe(function(){
+	log('all items processed');
+});
+```
 
 # dependencies
 
