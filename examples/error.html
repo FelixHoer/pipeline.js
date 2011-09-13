@@ -1,0 +1,158 @@
+<html>
+<head>
+
+	<title>Pipeline-Demo</title>
+	<script language="javascript" type="text/javascript" src="../pipeline.js"></script>
+
+</head>
+<body>
+
+	<h1>Error-Demo</h1>
+
+	<script language="javascript" type="text/javascript">
+		(function(){
+
+			// display messages
+			var log = function(text){
+				var body = document.body;
+				body.appendChild(document.createTextNode(text));
+				body.appendChild(document.createElement('br'));
+				console && console.log && console.log(text);
+			};
+
+			// generators for asynchronous testing functions
+
+			var generateAsyncFunction = function(name, time){
+				return function(next){
+					log('starting job ' + name + '!');
+					setTimeout(function(){
+						log('finally done with ' + name + '!');
+						next(); // signal that async function is done
+					}, time);
+				};
+			};
+
+			var generateExceptionThrower = function(name){
+				return function(next){
+					log('starting job ' + name + '!');
+					throw '[exception in ' + name + ']';
+					log('finally done with ' + name + '!');
+				};
+			};
+
+			var generateErrorSender = function(name, time){
+				return function(next){
+					log('starting job ' + name + '!');
+					setTimeout(function(){
+						next('[error in ' + name + ']');
+					}, time);
+				};
+			};
+
+			var generateCallback = function(next){
+				return function(err){
+					if(err)
+						log('error: ' + err);
+					else
+						log('success');
+					next();
+				};
+			};
+
+			// load functions into scope
+			var parallel = pipeline.parallel;
+			var sequence = pipeline.sequence;
+			var forEach = pipeline.forEach;
+
+			// create pipeline of tests
+			var pipe = sequence([
+
+				function(next){
+					log('-- starting test #1 sequence --');
+					sequence([
+						generateAsyncFunction('a', 500),
+						generateExceptionThrower('b'),
+						generateAsyncFunction('c', 500),
+						generateExceptionThrower('d'),
+						generateAsyncFunction('e', 500)
+					])(generateCallback(next));
+				},
+
+				function(next){
+					log('-- starting test #2 sequence --');
+					sequence([
+						generateAsyncFunction('a', 500),
+						generateAsyncFunction('b', 500),
+						generateErrorSender('c', 500),
+						generateErrorSender('d', 500),
+						generateAsyncFunction('e', 500)
+					])(generateCallback(next));
+				},
+
+				function(next){
+					log('-- starting test #3 parallel --');
+					parallel([
+						generateAsyncFunction('1', 900),
+						generateAsyncFunction('2', 400),
+						generateExceptionThrower('3'),
+						generateAsyncFunction('4', 600),
+						generateExceptionThrower('5'),
+						generateAsyncFunction('6', 800)
+					])(generateCallback(next));
+				},
+
+				function(next){
+					log('-- starting test #4 parallel --');
+					parallel([
+						generateAsyncFunction('1', 900),
+						generateAsyncFunction('2', 400),
+						generateErrorSender('3', 300),
+						generateAsyncFunction('4', 600),
+						generateErrorSender('5', 500),
+						generateAsyncFunction('6', 800)
+					])(generateCallback(next));
+				},
+
+				function(next){
+					log('-- starting test #5 forEach --');
+					
+					var collection = ['a', 'b', undefined, 'c',  undefined, 'd'];
+					
+					forEach(collection, function(item, done){
+						log('processing ' + item);
+						item.toUpperCase(); // won't work on undefined
+						log('finished ' + item);
+						done();
+					})(generateCallback(next));
+				},
+
+				function(next){
+					log('-- starting test #6 forEach --');
+
+					var collection = ['a', 'b', 'c',  undefined, 'd'];
+
+					forEach(collection, function(item, done){
+						log('processing ' + item);
+						if(item === undefined){
+							done('cant handle undefined');
+						}else{
+							item.toUpperCase();
+							log('finished ' + item);
+							done();
+						}
+					}, generateCallback(next));
+				}
+				
+			]);
+
+			pipe(function(err){
+				if(err)
+					log('error: ' + err);
+				log('-- all tests done --');
+			});
+
+		})();
+	</script>
+
+</body>
+</html>

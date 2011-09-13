@@ -47,6 +47,22 @@ pipe(function(){
 });
 ```
 
+```
+starting job a!
+finally done with a!
+starting job b-1!
+starting job b-2!
+starting job b-3!
+finally done with b-2!
+finally done with b-3!
+finally done with b-1!
+starting job c!
+finally done with c!
+starting job d!
+finally done with d!
+all jobs have finished
+```
+
 `generateAsyncFunction` just automates the process of creating async test 
 functions.
 
@@ -64,20 +80,28 @@ var generateAsyncFunction = function(name, time){
 
 # api
 
-## pipeline.sequence( functions, callback, [context] )
-## pipeline.sequence( functions ) -> f( callback, [context] )
+### pipeline.sequence( functions, callback, [context] )
+### pipeline.sequence( functions ) -> f( callback, [context] )
 
 ```
 functions: [ function(next) ]
-	next: function()
-callback: function()
+	next: function(err)
+callback: function(err)
 context: {}
 ```
 
-`sequence` calls the given `functions` one after another. 
+`sequence` calls the given `functions` one after another, waiting for the 
+predecessor to signal that it is done before executing the next function.
+
 Once all are done the `callback` is executed.
+
 If a `context` is provided all `functions` and the `callback` will be executed 
 with `this` assigned to it.
+
+To show that something went wrong one of the `functions` can either throw an 
+exception (just possible at the top level) or execute it's callback with the 
+error as first argument. The following functions won't be called and the 
+`callback` will receive the error as first argument.
 
 ie `examples/sequence.html`:
 
@@ -98,21 +122,38 @@ pipe(function(){
 });
 ```
 
-## pipeline.parallel( functions, callback, [context] )
-## pipeline.parallel( functions ) -> f( callback, [context] )
+```
+starting job a!
+finally done with a!
+starting job b!
+finally done with b!
+starting job c!
+finally done with c!
+all jobs have finished
+```
+
+### pipeline.parallel( functions, callback, [context] )
+### pipeline.parallel( functions ) -> f( callback, [context] )
 
 ```
 functions: [ function(next) ]
-	next: function()
-callback: function()
+	next: function(err)
+callback: function(err[])
 context: {}
 ```
 
 `parallel` starts the given `functions` all at the same time and doesn't wait 
 for the predecessor's callback.
+
 Once all `functions` are done the `callback` is executed.
+
 If a `context` is provided all `functions` and the `callback` will be executed 
 with `this` assigned to it.
+
+To show that something went wrong one of the `functions` can either throw an 
+exception (just possible at the top level) or execute it's callback with the 
+error as first argument. The other functions will still be executed and 
+`callback` will receive an array of all occured errors when all are done.
 
 ie `examples/parallel.html`:
 
@@ -133,23 +174,40 @@ pipe(function(){
 });
 ```
 
-## pipeline.forEach( collection, iterator, callback, context )
-## pipeline.forEach( functions, iterator ) -> f( callback, context )
+```
+starting job a!
+starting job b!
+starting job c!
+finally done with b!
+finally done with a!
+finally done with c!
+all jobs have finished
+```
+
+### pipeline.forEach( collection, iterator, callback, context )
+### pipeline.forEach( functions, iterator ) -> f( callback, context )
 
 ```
 collection: [ any ]
 iterator: function(item, next)
 	item: any
-	next: function()
-callback: function()
+	next: function(err)
+callback: function(err[])
 context: {}
 ```
 
 `forEach` calls `iterator` with each `item` in the collection.
+
 Once the `next`-function of all `iterator`s / `item`s has been called the 
 `callback` is executed.
+
 If a `context` is provided each `iterator` and the `callback` will be executed 
 with `this` assigned to it.
+
+To show that something went a `iterator` can either throw an exception (just 
+possible at the top level) or execute it's `next`-callback with the 
+error as first argument. The other items will still be processed and 
+`callback` will receive an array of all occured errors when all are done.
 
 ie `examples/forEach.html`:
 
@@ -179,6 +237,20 @@ var pipe = forEach(collection, function(item, done){
 pipe(function(){
 	log('all items processed');
 });
+```
+
+Your results will differ due to random delay.
+
+```
+a: start processing
+b: start processing
+c: start processing
+d: start processing
+b: done processing after 77ms
+d: done processing after 176ms
+a: done processing after 706ms
+c: done processing after 832ms
+all items processed
 ```
 
 # dependencies
