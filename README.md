@@ -1,7 +1,8 @@
 # pipeline.js
 
 pipeline.js is a flow-control library that simplifies coordination of 
-asynchronous tasks.
+asynchronous tasks. It can be used in the browser as well as in 
+[node.js](http://nodejs.org/).
 
 # usage
 
@@ -24,27 +25,23 @@ another or all at the same time.
 
 ```javascript
 // load functions into scope
-
-var pipeline = require('./pipeline.js');
+var pipeline = require('./pipeline.js'); // not needed in the browser
 var sequence = pipeline.sequence;
 var parallel = pipeline.parallel;
-var forEach = pipeline.forEach;
 
 // create a pipeline
-
 var pipe = sequence([
- 	generateAsyncFunction('a', 500),
+	generateAsyncFunction('a', 500),
 	parallel([
-  	generateAsyncFunction('b-1', 900),
-  	generateAsyncFunction('b-2', 400),
-  	generateAsyncFunction('b-3', 600)
+		generateAsyncFunction('b-1', 900),
+		generateAsyncFunction('b-2', 400),
+		generateAsyncFunction('b-3', 600)
 	]),
  	generateAsyncFunction('c', 500),
 	generateAsyncFunction('d', 500)
 ]);
 
 // execute the pipeline and call the given function when finished
-
 pipe(function(){
 	console.log('all jobs have finished');
 });

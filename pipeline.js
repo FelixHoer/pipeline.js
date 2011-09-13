@@ -75,4 +75,4 @@
 			executor(callback, context || this);
 	};
 	
-})(exports || this);
+})(typeof exports === 'undefined' ? (this.pipeline = {}) : exports);

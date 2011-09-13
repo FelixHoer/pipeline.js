@@ -1,0 +1,53 @@
+<html>
+<head>
+
+	<title>Pipeline-Demo</title>
+	<script language="javascript" type="text/javascript" src="../pipeline.js"></script>
+
+</head>
+<body>
+
+	<h1>ForEach-Demo</h1>
+
+	<script language="javascript" type="text/javascript">
+		(function(){
+
+			// display messages
+			var log = function(text){
+				var body = document.body;
+				body.appendChild(document.createTextNode(text));
+				body.appendChild(document.createElement('br'));
+				console && console.log && console.log(text);
+			};
+
+			// generator for asynchronous testing functions
+			var processAsync = function(item, next){
+			var time = parseInt(Math.random() * 1000);
+				log(item + ': start processing');
+				setTimeout(function(){
+					log(item + ': done processing after ' + time + 'ms');
+					next(); // signal that async function is done
+				}, time);
+			};
+
+			// load functions into scope
+			var forEach = pipeline.forEach;
+
+			// a collection of items that have to be processed in parallel
+			var collection = ['a', 'b', 'c', 'd'];
+
+			// create a pipeline
+			var pipe = forEach(collection, function(item, done){
+				processAsync(item, done);
+			});
+
+			// execute the pipeline and call the given function when finished
+			pipe(function(){
+				log('all items processed');
+			});
+
+		})();
+	</script>
+
+</body>
+</html>
